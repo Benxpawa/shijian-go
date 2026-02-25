@@ -28,12 +28,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $json = file_get_contents('php://input');
     $data = json_decode($json, true);
     if ($data) {
+        $existingData = file_exists($statusFile) ? json_decode(file_get_contents($statusFile), true) : null;
+        
+        if ($existingData && isset($existingData['process_name']) && $existingData['process_name'] === $data['process_name']) {
+            $data['event_time'] = $existingData['event_time'];
+        }
+        
         $data['last_seen'] = time();
         file_put_contents($statusFile, json_encode($data), LOCK_EX);
-        writeDebugLog("收到更新: " . $data['process_name'] . " 状态: " . $data['status']);
         exit("Success");
     }
-    writeDebugLog("收到错误请求数据");
     exit("Invalid Data");
 }
 
