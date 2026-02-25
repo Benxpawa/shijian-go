@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	ServerURL = "https://www.xxx.com/api.php" // 接口地址
+	ServerURL = "http://localhost:8081/api.php" // 接口地址
 	LocalPort = "12378"                       // 一般不需要改，占用了再改
 )
 
@@ -57,11 +57,17 @@ func getActiveProcessName() string {
 	return name
 }
 
-func sendToAPI(name string, status string) {
+func sendToAPI(name string, status string, updateEventTime bool) {
+	eventTime := ""
+	if updateEventTime {
+		eventTime = time.Now().Format(time.RFC3339)
+	} else {
+		eventTime = "keep"
+	}
 	data := Payload{
 		ProcessName:  name,
 		AppStartTime: AppStartTime,
-		EventTime:    time.Now().Format(time.RFC3339),
+		EventTime:    eventTime,
 		Status:       status,
 	}
 	b, _ := json.Marshal(data)
@@ -85,12 +91,12 @@ func startLocalServer() {
 		switch cmd {
 		case "on":
 			IsRunning = true
-			sendToAPI(getActiveProcessName(), "active")
+			sendToAPI(getActiveProcessName(), "active", true)
 		case "off":
 			IsRunning = false
-			sendToAPI("None", "off")
+			sendToAPI("None", "off", true)
 		case "exit":
-			sendToAPI("None", "exit")
+			sendToAPI("None", "exit", true)
 			os.Exit(0)
 		}
 		conn.Close()
@@ -113,7 +119,7 @@ func main() {
 	go func() {
 		for {
 			if IsRunning {
-				sendToAPI(getActiveProcessName(), "active")
+				sendToAPI(getActiveProcessName(), "active", false)
 			}
 			time.Sleep(10 * time.Second)
 		}
@@ -127,7 +133,7 @@ func main() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	go func() {
 		<-c
-		sendToAPI("None", "exit")
+		sendToAPI("None", "exit", true)
 		time.Sleep(500 * time.Millisecond)
 		os.Exit(0)
 	}()
@@ -135,7 +141,7 @@ func main() {
 	// 事件钩子
 	callback := syscall.NewCallback(func(hWinEventHook uintptr, event uint32, hwnd uintptr, idObject int32, idChild int32, idEventThread uint32, dwmsEventTime uint32) uintptr {
 		if event == EVENT_SYSTEM_FOREGROUND && IsRunning {
-			sendToAPI(getActiveProcessName(), "active")
+			sendToAPI(getActiveProcessName(), "active", true)
 		}
 		return 0
 	})
