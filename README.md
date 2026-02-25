@@ -115,4 +115,4 @@ go build -ldflags="-s -w -H windowsgui" -o shijianwo.exe main.go
 
 **本项目使用AI辅助开发**
 
-基于 [MIT License](https://www.google.com/search?q=LICENSE) 协议。
+基于 [MIT License](https://github.com/Benxpawa/shijian-go?tab=MIT-1-ov-file) 协议。
